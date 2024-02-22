@@ -23,7 +23,7 @@ func main() {
 		return
 	}
 
-	cert, err := tls.LoadX509KeyPair(tlsCert, tlsKey)
+	cert, err := tls.X509KeyPair([]byte(tlsCert), []byte(tlsKey))
 	if err != nil {
 		fmt.Println("Failed to load TLS certificate and key:", err)
 		return
