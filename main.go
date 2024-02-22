@@ -37,6 +37,8 @@ func main() {
 		TLSClientConfig: tlsConfig,
 	}
 
+	test(context.Background(), tr)
+
 	client, err := api.NewClient(api.Config{
 		Address:      "https://thanos-querier.openshift-monitoring.svc.cluster.local:9091",
 		RoundTripper: config.NewAuthorizationCredentialsRoundTripper("Bearer", config.Secret(token), tr),
@@ -58,6 +60,33 @@ func main() {
 	if err != nil {
 		fmt.Printf("Error querying Prometheus: %v\n", err)
 		os.Exit(1)
+	}
+	if len(warnings) > 0 {
+		fmt.Printf("Warnings: %v\n", warnings)
+	}
+	fmt.Printf("Result:\n%v\n", result)
+}
+
+func test(ctx context.Context, tr *http.Transport) {
+	client, err := api.NewClient(api.Config{
+		Address:      "https://thanos-querier.openshift-monitoring.svc.cluster.local:9091",
+		RoundTripper: tr,
+	})
+	if err != nil {
+		fmt.Printf("Error creating client: %v\n", err)
+		return
+	}
+
+	r := v1.Range{
+		Start: time.Now().Add(-time.Hour),
+		End:   time.Now(),
+		Step:  time.Minute,
+	}
+	v1api := v1.NewAPI(client)
+	result, warnings, err := v1api.QueryRange(ctx, "rate(prometheus_tsdb_head_samples_appended_total[5m])", r)
+	if err != nil {
+		fmt.Printf("Error querying Prometheus w/o bearer: %v\n", err)
+		return
 	}
 	if len(warnings) > 0 {
 		fmt.Printf("Warnings: %v\n", warnings)
