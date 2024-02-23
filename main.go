@@ -39,20 +39,19 @@ func main() {
 
 	test(context.Background(), tr)
 
-	rt, err := config.NewRoundTripperFromConfig(config.HTTPClientConfig{
-		TLSConfig: config.TLSConfig{
-			Cert:               tlsCert,
-			Key:                config.Secret(tlsKey),
-			InsecureSkipVerify: true,
-		},
-		BearerToken: config.Secret(token),
-	}, "test")
-
-	if err != nil {
-		fmt.Printf("Error creating round tripper: %v\n", err)
-	}
-
 	{
+		rt, err := config.NewRoundTripperFromConfig(config.HTTPClientConfig{
+			TLSConfig: config.TLSConfig{
+				Cert:               tlsCert,
+				Key:                config.Secret(tlsKey),
+				InsecureSkipVerify: true,
+			},
+			// BearerToken: config.Secret(token),
+		}, "test")
+
+		if err != nil {
+			fmt.Printf("Error creating round tripper: %v\n", err)
+		}
 		client, err := api.NewClient(api.Config{
 			Address:      "https://thanos-querier.openshift-monitoring.svc.cluster.local:9091",
 			RoundTripper: rt,
