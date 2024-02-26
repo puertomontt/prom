@@ -71,7 +71,8 @@ func withCACertAndTLSConfig() {
 		return
 	}
 	tlsConfig := &tls.Config{
-		RootCAs: caCertPool,
+		RootCAs:            caCertPool,
+		InsecureSkipVerify: skipInsecure != "",
 	}
 	transport := &http.Transport{TLSClientConfig: tlsConfig}
 
