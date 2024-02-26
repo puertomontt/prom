@@ -15,11 +15,12 @@ import (
 )
 
 var (
-	token        = os.Getenv("token")
-	tlsCert      = os.Getenv("tls.crt")
-	tlsKey       = os.Getenv("tls.key")
-	caCert       = os.Getenv("ca.crt")
-	skipInsecure = os.Getenv("SKIP_INSECURE_VERIFY")
+	token         = os.Getenv("token")
+	tlsCert       = os.Getenv("tls.crt")
+	tlsKey        = os.Getenv("tls.key")
+	caCert        = os.Getenv("ca.crt")
+	serviceCaCert = os.Getenv("service-ca.crt")
+	skipInsecure  = os.Getenv("SKIP_INSECURE_VERIFY")
 )
 
 func main() {
@@ -27,6 +28,7 @@ func main() {
 	withCACertAndTLSConfig()
 	withCACert()
 	withTokenAndTLS()
+	withServiceCACert()
 }
 
 func withTLSCert() {
@@ -96,6 +98,31 @@ func withCACert() {
 	rt, err := config.NewRoundTripperFromConfig(config.HTTPClientConfig{
 		TLSConfig: config.TLSConfig{
 			CA:                 caCert,
+			InsecureSkipVerify: skipInsecure != "",
+		},
+		BearerToken: config.Secret(token),
+	}, "test")
+
+	if err != nil {
+		fmt.Printf("Error creating round tripper: %v\n", err)
+	}
+	client, err := api.NewClient(api.Config{
+		Address:      "https://thanos-querier.openshift-monitoring.svc.cluster.local:9091",
+		RoundTripper: rt,
+	})
+	if err != nil {
+		fmt.Printf("Error creating client: %v\n", err)
+		return
+	}
+	query(context.Background(), client)
+}
+
+func withServiceCACert() {
+	fmt.Println("withServiceCACert")
+	fmt.Println("Using Service CA certificate from environment variable:")
+	rt, err := config.NewRoundTripperFromConfig(config.HTTPClientConfig{
+		TLSConfig: config.TLSConfig{
+			CA:                 serviceCaCert,
 			InsecureSkipVerify: skipInsecure != "",
 		},
 		BearerToken: config.Secret(token),
