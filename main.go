@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"crypto/tls"
+	"crypto/x509"
 	"fmt"
 	"net/http"
 	"os"
@@ -38,6 +39,55 @@ func main() {
 	}
 
 	test(context.Background(), tr)
+
+	{
+		fmt.Println("Using CA certificate from environment variable:")
+		caCert := os.Getenv("ca.crt")
+		caCertPool := x509.NewCertPool()
+		if ok := caCertPool.AppendCertsFromPEM([]byte(caCert)); !ok {
+			fmt.Println("Failed to append CA certificate to pool")
+			return
+		}
+		rt, err := config.NewRoundTripperFromConfig(config.HTTPClientConfig{
+			TLSConfig: config.TLSConfig{
+				CA:   caCert,
+				Cert: tlsCert,
+				Key:  config.Secret(tlsKey),
+				// InsecureSkipVerify: true,
+			},
+			BearerToken: config.Secret(token),
+		}, "test")
+
+		if err != nil {
+			fmt.Printf("Error creating round tripper: %v\n", err)
+		}
+		client, err := api.NewClient(api.Config{
+			Address:      "https://thanos-querier.openshift-monitoring.svc.cluster.local:9091",
+			RoundTripper: rt,
+		})
+		if err != nil {
+			fmt.Printf("Error creating client: %v\n", err)
+			os.Exit(1)
+		}
+
+		v1api := v1.NewAPI(client)
+		ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+		defer cancel()
+		r := v1.Range{
+			Start: time.Now().Add(-time.Hour),
+			End:   time.Now(),
+			Step:  time.Minute,
+		}
+		result, warnings, err := v1api.QueryRange(ctx, "rate(prometheus_tsdb_head_samples_appended_total[5m])", r)
+		if err != nil {
+			fmt.Printf("Error querying Prometheus w/o RT: %v\n", err)
+			os.Exit(1)
+		}
+		if len(warnings) > 0 {
+			fmt.Printf("Warnings: %v\n", warnings)
+		}
+		fmt.Printf("Result:\n%v\n", result)
+	}
 
 	{
 		rt, err := config.NewRoundTripperFromConfig(config.HTTPClientConfig{
