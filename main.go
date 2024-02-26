@@ -26,7 +26,7 @@ func main() {
 	// withTLSCert()
 	withCACertAndTLSConfig()
 	withCACert()
-	withToken()
+	withTokenAndTLS()
 }
 
 func withTLSCert() {
@@ -43,7 +43,8 @@ func withTLSCert() {
 	}
 
 	tlsConfig := &tls.Config{
-		Certificates: []tls.Certificate{cert},
+		Certificates:       []tls.Certificate{cert},
+		InsecureSkipVerify: skipInsecure != "",
 	}
 
 	tr := &http.Transport{
@@ -114,13 +115,13 @@ func withCACert() {
 	query(context.Background(), client)
 }
 
-func withToken() {
-	fmt.Println("withToken")
+func withTokenAndTLS() {
+	fmt.Println("withTokenAndTLS")
 	rt, err := config.NewRoundTripperFromConfig(config.HTTPClientConfig{
 		TLSConfig: config.TLSConfig{
 			Cert:               tlsCert,
 			Key:                config.Secret(tlsKey),
-			InsecureSkipVerify: true,
+			InsecureSkipVerify: skipInsecure != "",
 		},
 		BearerToken: config.Secret(token),
 	}, "test")
