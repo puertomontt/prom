@@ -50,9 +50,8 @@ func main() {
 		}
 		rt, err := config.NewRoundTripperFromConfig(config.HTTPClientConfig{
 			TLSConfig: config.TLSConfig{
-				CA:   caCert,
-				Cert: tlsCert,
-				Key:  config.Secret(tlsKey),
+				CA:  caCert,
+				Key: config.Secret(tlsKey),
 				// InsecureSkipVerify: true,
 			},
 			BearerToken: config.Secret(token),
@@ -80,8 +79,8 @@ func main() {
 		}
 		result, warnings, err := v1api.QueryRange(ctx, "rate(prometheus_tsdb_head_samples_appended_total[5m])", r)
 		if err != nil {
-			fmt.Printf("Error querying Prometheus w/o RT: %v\n", err)
-			os.Exit(1)
+			fmt.Printf("Error querying Prometheus w/ CA Cert: %v\n", err)
+
 		}
 		if len(warnings) > 0 {
 			fmt.Printf("Warnings: %v\n", warnings)
