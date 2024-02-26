@@ -95,7 +95,6 @@ func withCACert() {
 	rt, err := config.NewRoundTripperFromConfig(config.HTTPClientConfig{
 		TLSConfig: config.TLSConfig{
 			CA:                 caCert,
-			Key:                config.Secret(tlsKey),
 			InsecureSkipVerify: skipInsecure != "",
 		},
 		BearerToken: config.Secret(token),
