@@ -12,6 +12,7 @@ import (
 	"github.com/prometheus/client_golang/api"
 	v1 "github.com/prometheus/client_golang/api/prometheus/v1"
 	"github.com/prometheus/common/config"
+	"k8s.io/client-go/transport"
 )
 
 const (
@@ -29,6 +30,7 @@ var (
 
 func main() {
 	// withTLSCert()
+	okNowImSerious()
 	real()
 	openshift()
 	openshiftCA()
@@ -327,4 +329,38 @@ func query(ctx context.Context, client api.Client) {
 		fmt.Printf("Warnings: %v\n", warnings)
 	}
 	fmt.Printf("Result:\n%v\n", result)
+}
+
+func okNowImSerious() {
+	fmt.Println("okNowImSerious")
+	client, err := newPrometheusClient()
+	if err != nil {
+		fmt.Printf("Error creating client: %v\n", err)
+		return
+	}
+	query(context.Background(), client)
+}
+
+func newPrometheusClient() (api.Client, error) {
+	transportConfig := &transport.Config{}
+
+	transportConfig.TLS.CAFile = "/var/run/secrets/kubernetes.io/serviceaccount/ca.crt"
+
+	if skipInsecure != "" {
+		transportConfig.TLS.Insecure = true
+		transportConfig.TLS.CAData = nil
+		transportConfig.TLS.CAFile = ""
+	}
+
+	transportConfig.BearerTokenFile = "/var/run/secrets/kubernetes.io/serviceaccount/token"
+
+	roundTripper, err := transport.New(transportConfig)
+	if err != nil {
+		return nil, err
+	}
+
+	return api.NewClient(api.Config{
+		Address:      prometheusUrl,
+		RoundTripper: roundTripper,
+	})
 }
