@@ -31,6 +31,7 @@ func main() {
 	// withTLSCert()
 	real()
 	openshift()
+	openshiftCA()
 	withSvcIP()
 	withCACertAndTLSConfig()
 	withCACert()
@@ -226,8 +227,50 @@ func withTokenAndTLS() {
 	query(context.Background(), client)
 }
 
+func openshiftCA() {
+	fmt.Println("openshiftCA")
+	content, err := os.ReadFile("/run/secrets/kubernetes.io/serviceaccount/token")
+	if err != nil {
+		fmt.Println("Unable to obtain access token from pod or ENV ", err)
+		return
+	}
+
+	// Convert []byte to string and print to screen
+	token := string(content)
+	caCertPath := "/var/run/secrets/kubernetes.io/serviceaccount/ca.crt"
+	caCert, err := os.ReadFile(caCertPath)
+
+	if err != nil {
+		fmt.Println("Error reading service account CA certificate: ", err)
+		return
+	}
+
+	caCertPool := x509.NewCertPool()
+	if parseOk := caCertPool.AppendCertsFromPEM(caCert); !parseOk {
+		fmt.Println("Error parsing service account CA certificate")
+		return
+	}
+	tlsConfig := &tls.Config{
+		RootCAs:            caCertPool,
+		InsecureSkipVerify: skipInsecure != "",
+	}
+	transport := &http.Transport{
+		TLSClientConfig: tlsConfig,
+	}
+	client, err := api.NewClient(api.Config{
+		Address:      prometheusUrl,
+		RoundTripper: config.NewAuthorizationCredentialsRoundTripper("Bearer", config.Secret(token), transport),
+	})
+	if err != nil {
+		fmt.Printf("Error creating client: %v\n", err)
+		return
+	}
+
+	query(context.Background(), client)
+}
+
 func openshift() {
-	fmt.Println("openshift")
+	fmt.Println("openshift-proxy")
 	content, err := os.ReadFile("/run/secrets/kubernetes.io/serviceaccount/token")
 	if err != nil {
 		fmt.Println("Unable to obtain access token from pod or ENV ", err)
@@ -240,15 +283,18 @@ func openshift() {
 	caCert, err := os.ReadFile(caCertPath)
 
 	if err != nil {
-
+		fmt.Println("Error reading service account CA certificate: ", err)
+		return
 	}
+
 	caCertPool := x509.NewCertPool()
 	if parseOk := caCertPool.AppendCertsFromPEM(caCert); !parseOk {
 		fmt.Println("Error parsing service account CA certificate")
 		return
 	}
 	tlsConfig := &tls.Config{
-		RootCAs: caCertPool,
+		RootCAs:            caCertPool,
+		InsecureSkipVerify: skipInsecure != "",
 	}
 	transport := &http.Transport{
 		TLSClientConfig: tlsConfig,
