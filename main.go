@@ -236,7 +236,7 @@ func openshift() {
 
 	// Convert []byte to string and print to screen
 	token := string(content)
-	caCertPath := "/var/run/secrets/kubernetes.io/serviceaccount/ca.crt"
+	caCertPath := "/var/run/secrets/kubernetes.io/serviceaccount/service-ca.crt"
 	caCert, err := os.ReadFile(caCertPath)
 
 	if err != nil {
