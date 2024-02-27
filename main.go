@@ -31,9 +31,9 @@ func main() {
 	// withTLSCert()
 	real()
 	withCACertAndTLSConfig()
-	withCACert()
-	withTokenAndTLS()
-	withServiceCACert()
+	// withCACert()
+	// withTokenAndTLS()
+	// withServiceCACert()
 	time.Sleep(5 * time.Minute)
 }
 
@@ -123,82 +123,82 @@ func withCACertAndTLSConfig() {
 	query(context.Background(), client)
 }
 
-func withCACert() {
-	fmt.Println("withCACert")
-	fmt.Println("Using CA certificate from environment variable:")
-	caCert := os.Getenv("ca.crt")
-	rt, err := config.NewRoundTripperFromConfig(config.HTTPClientConfig{
-		TLSConfig: config.TLSConfig{
-			CA:                 caCert,
-			InsecureSkipVerify: skipInsecure != "",
-		},
-		BearerToken: config.Secret(token),
-	}, "test")
+// func withCACert() {
+// 	fmt.Println("withCACert")
+// 	fmt.Println("Using CA certificate from environment variable:")
+// 	caCert := os.Getenv("ca.crt")
+// 	rt, err := config.NewRoundTripperFromConfig(config.HTTPClientConfig{
+// 		TLSConfig: config.TLSConfig{
+// 			CA:                 caCert,
+// 			InsecureSkipVerify: skipInsecure != "",
+// 		},
+// 		BearerToken: config.Secret(token),
+// 	}, "test")
 
-	if err != nil {
-		fmt.Printf("Error creating round tripper: %v\n", err)
-	}
-	client, err := api.NewClient(api.Config{
-		Address:      prometheusUrl,
-		RoundTripper: rt,
-	})
-	if err != nil {
-		fmt.Printf("Error creating client: %v\n", err)
-		return
-	}
-	query(context.Background(), client)
-}
+// 	if err != nil {
+// 		fmt.Printf("Error creating round tripper: %v\n", err)
+// 	}
+// 	client, err := api.NewClient(api.Config{
+// 		Address:      prometheusUrl,
+// 		RoundTripper: rt,
+// 	})
+// 	if err != nil {
+// 		fmt.Printf("Error creating client: %v\n", err)
+// 		return
+// 	}
+// 	query(context.Background(), client)
+// }
 
-func withServiceCACert() {
-	fmt.Println("withServiceCACert")
-	fmt.Println("Using Service CA certificate from environment variable:")
-	rt, err := config.NewRoundTripperFromConfig(config.HTTPClientConfig{
-		TLSConfig: config.TLSConfig{
-			CA:                 serviceCaCert,
-			InsecureSkipVerify: skipInsecure != "",
-		},
-		BearerToken: config.Secret(token),
-	}, "test")
+// func withServiceCACert() {
+// 	fmt.Println("withServiceCACert")
+// 	fmt.Println("Using Service CA certificate from environment variable:")
+// 	rt, err := config.NewRoundTripperFromConfig(config.HTTPClientConfig{
+// 		TLSConfig: config.TLSConfig{
+// 			CA:                 serviceCaCert,
+// 			InsecureSkipVerify: skipInsecure != "",
+// 		},
+// 		BearerToken: config.Secret(token),
+// 	}, "test")
 
-	if err != nil {
-		fmt.Printf("Error creating round tripper: %v\n", err)
-	}
-	client, err := api.NewClient(api.Config{
-		Address:      prometheusUrl,
-		RoundTripper: rt,
-	})
-	if err != nil {
-		fmt.Printf("Error creating client: %v\n", err)
-		return
-	}
-	query(context.Background(), client)
-}
+// 	if err != nil {
+// 		fmt.Printf("Error creating round tripper: %v\n", err)
+// 	}
+// 	client, err := api.NewClient(api.Config{
+// 		Address:      prometheusUrl,
+// 		RoundTripper: rt,
+// 	})
+// 	if err != nil {
+// 		fmt.Printf("Error creating client: %v\n", err)
+// 		return
+// 	}
+// 	query(context.Background(), client)
+// }
 
-func withTokenAndTLS() {
-	fmt.Println("withTokenAndTLS")
-	rt, err := config.NewRoundTripperFromConfig(config.HTTPClientConfig{
-		TLSConfig: config.TLSConfig{
-			Cert:               tlsCert,
-			Key:                config.Secret(tlsKey),
-			InsecureSkipVerify: skipInsecure != "",
-		},
-		BearerToken: config.Secret(token),
-	}, "test")
+// func withTokenAndTLS() {
+// 	fmt.Println("withTokenAndTLS")
+// 	rt, err := config.NewRoundTripperFromConfig(config.HTTPClientConfig{
+// 		TLSConfig: config.TLSConfig{
+// 			Cert:               tlsCert,
+// 			Key:                config.Secret(tlsKey),
+// 			InsecureSkipVerify: skipInsecure != "",
+// 		},
+// 		BearerToken: config.Secret(token),
+// 	}, "test")
 
-	if err != nil {
-		fmt.Printf("Error creating round tripper: %v\n", err)
-	}
-	client, err := api.NewClient(api.Config{
-		Address:      prometheusUrl,
-		RoundTripper: rt,
-	})
-	if err != nil {
-		fmt.Printf("Error creating client: %v\n", err)
-		return
-	}
+// 	if err != nil {
+// 		fmt.Printf("Error creating round tripper: %v\n", err)
+// 	}
+// 	client, err := api.NewClient(api.Config{
+// 		Address:      prometheusUrl,
+// 		RoundTripper: rt,
+// 	})
+// 	if err != nil {
+// 		fmt.Printf("Error creating client: %v\n", err)
+// 		return
+// 	}
 
-	query(context.Background(), client)
-}
+// 	query(context.Background(), client)
+// }
 
 func query(ctx context.Context, client api.Client) {
 	r := v1.Range{
