@@ -25,10 +25,36 @@ var (
 
 func main() {
 	// withTLSCert()
+	real()
 	withCACertAndTLSConfig()
 	withCACert()
 	withTokenAndTLS()
 	withServiceCACert()
+}
+
+func real() {
+	transport := &http.Transport{}
+	caCertPool := x509.NewCertPool()
+	if !caCertPool.AppendCertsFromPEM([]byte(serviceCaCert)) {
+		fmt.Println("failed to append prometheus ca cert to pool")
+		return
+	}
+	tlsConfig := &tls.Config{
+		RootCAs: caCertPool,
+	}
+	transport = &http.Transport{
+		TLSClientConfig: tlsConfig,
+	}
+	rt := config.NewAuthorizationCredentialsRoundTripper("Bearer", config.Secret(token), transport)
+	client, err := api.NewClient(api.Config{
+		Address:      "https://thanos-querier.openshift-monitoring.svc.cluster.local:9091",
+		RoundTripper: rt,
+	})
+	if err != nil {
+		fmt.Printf("Error creating client: %v\n", err)
+		return
+	}
+	query(context.Background(), client)
 }
 
 func withTLSCert() {
@@ -177,7 +203,7 @@ func query(ctx context.Context, client api.Client) {
 	v1api := v1.NewAPI(client)
 	result, warnings, err := v1api.QueryRange(ctx, "rate(prometheus_tsdb_head_samples_appended_total[5m])", r)
 	if err != nil {
-		fmt.Printf("Error querying Prometheus w/o bearer: %v\n", err)
+		fmt.Printf("Error querying Prometheus: %v\n", err)
 		return
 	}
 	if len(warnings) > 0 {
