@@ -14,6 +14,10 @@ import (
 	"github.com/prometheus/common/config"
 )
 
+const (
+	prometheusUrl = "https://thanos-querier.openshift-monitoring.svc.cluster.local:9091"
+)
+
 var (
 	token         = os.Getenv("token")
 	tlsCert       = os.Getenv("tls.crt")
@@ -30,9 +34,11 @@ func main() {
 	withCACert()
 	withTokenAndTLS()
 	withServiceCACert()
+	time.Sleep(5 * time.Minute)
 }
 
 func real() {
+	fmt.Println("real")
 	transport := &http.Transport{}
 	caCertPool := x509.NewCertPool()
 	if !caCertPool.AppendCertsFromPEM([]byte(serviceCaCert)) {
@@ -47,7 +53,7 @@ func real() {
 	}
 	rt := config.NewAuthorizationCredentialsRoundTripper("Bearer", config.Secret(token), transport)
 	client, err := api.NewClient(api.Config{
-		Address:      "https://thanos-querier.openshift-monitoring.svc.cluster.local:9091",
+		Address:      prometheusUrl,
 		RoundTripper: rt,
 	})
 	if err != nil {
@@ -80,7 +86,7 @@ func withTLSCert() {
 	}
 
 	client, err := api.NewClient(api.Config{
-		Address:      "https://thanos-querier.openshift-monitoring.svc.cluster.local:9091",
+		Address:      prometheusUrl,
 		RoundTripper: tr,
 	})
 	if err != nil {
@@ -106,7 +112,7 @@ func withCACertAndTLSConfig() {
 	transport := &http.Transport{TLSClientConfig: tlsConfig}
 
 	client, err := api.NewClient(api.Config{
-		Address:      "https://thanos-querier.openshift-monitoring.svc.cluster.local:9091",
+		Address:      prometheusUrl,
 		RoundTripper: config.NewAuthorizationCredentialsRoundTripper("Bearer", config.Secret(token), transport),
 	})
 	if err != nil {
@@ -133,7 +139,7 @@ func withCACert() {
 		fmt.Printf("Error creating round tripper: %v\n", err)
 	}
 	client, err := api.NewClient(api.Config{
-		Address:      "https://thanos-querier.openshift-monitoring.svc.cluster.local:9091",
+		Address:      prometheusUrl,
 		RoundTripper: rt,
 	})
 	if err != nil {
@@ -158,7 +164,7 @@ func withServiceCACert() {
 		fmt.Printf("Error creating round tripper: %v\n", err)
 	}
 	client, err := api.NewClient(api.Config{
-		Address:      "https://thanos-querier.openshift-monitoring.svc.cluster.local:9091",
+		Address:      prometheusUrl,
 		RoundTripper: rt,
 	})
 	if err != nil {
@@ -183,7 +189,7 @@ func withTokenAndTLS() {
 		fmt.Printf("Error creating round tripper: %v\n", err)
 	}
 	client, err := api.NewClient(api.Config{
-		Address:      "https://thanos-querier.openshift-monitoring.svc.cluster.local:9091",
+		Address:      prometheusUrl,
 		RoundTripper: rt,
 	})
 	if err != nil {
